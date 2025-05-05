@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard Proyek - SimonTrack</title>
+  <script src="https://cdn.jsdelivr.net/npm/vue@3/dist/vue.global.prod.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-6">
+  <div id="app" class="max-w-5xl mx-auto bg-white p-6 rounded shadow">
+    <h1 class="text-2xl font-bold mb-4">Dashboard Tracker Proyek - SimonTrack</h1>
+
+    <form @submit.prevent="addProject" class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+      <div>
+        <label class="block">Tanggal Proyek:</label>
+        <input type="date" v-model="newProject.date" class="w-full border p-2 rounded" required>
+      </div>
+      <div>
+        <label class="block">Nama Proyek:</label>
+        <input type="text" v-model="newProject.name" class="w-full border p-2 rounded" required>
+      </div>
+      <div>
+        <label class="block">Deadline:</label>
+        <input type="date" v-model="newProject.deadline" class="w-full border p-2 rounded" required>
+      </div>
+      <div>
+        <label class="block">Target (%):</label>
+        <input type="number" v-model.number="newProject.target" class="w-full border p-2 rounded" min="0" max="100" required>
+      </div>
+      <div>
+        <label class="block">Realisasi (%):</label>
+        <input type="number" v-model.number="newProject.realization" class="w-full border p-2 rounded" min="0" max="100" required>
+      </div>
+      <div>
+        <label class="block">Nilai Proyek (Rp):</label>
+        <input type="number" v-model.number="newProject.nominal" class="w-full border p-2 rounded" required>
+      </div>
+      <div class="md:col-span-2">
+        <button type="submit" class="bg-blue-600 text-white px-4 py-2 rounded">Tambah Proyek</button>
+      </div>
+    </form>
+
+    <table class="w-full table-auto border mb-6">
+      <thead class="bg-gray-200">
+        <tr>
+          <th class="border px-2 py-1">Tanggal</th>
+          <th class="border px-2 py-1">Nama Proyek</th>
+          <th class="border px-2 py-1">Deadline</th>
+          <th class="border px-2 py-1">Target</th>
+          <th class="border px-2 py-1">Realisasi</th>
+          <th class="border px-2 py-1">Nominal</th>
+          <th class="border px-2 py-1">Aksi</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-for="(project, index) in projects" :key="index">
+          <td class="border px-2 py-1">{{ project.date }}</td>
+          <td class="border px-2 py-1">{{ project.name }}</td>
+          <td class="border px-2 py-1">{{ project.deadline }}</td>
+          <td class="border px-2 py-1">{{ project.target }}%</td>
+          <td class="border px-2 py-1">{{ project.realization }}%</td>
+          <td class="border px-2 py-1">Rp {{ project.nominal.toLocaleString('id-ID') }}</td>
+          <td class="border px-2 py-1 text-center">
+            <button @click="removeProject(index)" class="text-red-600">🗑️</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <canvas id="chart" height="100"></canvas>
+  </div>
+
+  <script>
+    const { createApp } = Vue;
+    const app = createApp({
+      data() {
+        return {
+          newProject: {
+            date: '',
+            name: '',
+            deadline: '',
+            target: 0,
+            realization: 0,
+            nominal: 0
+          },
+          projects: []
+        }
+      },
+      methods: {
+        addProject() {
+          this.projects.push({ ...this.newProject });
+          this.updateChart();
+          this.newProject = { date: '', name: '', deadline: '', target: 0, realization: 0, nominal: 0 };
+        },
+        removeProject(index) {
+          this.projects.splice(index, 1);
+          this.updateChart();
+        },
+        updateChart() {
+          if (!this.chart) return;
+          const labels = this.projects.map(p => p.name);
+          const targetData = this.projects.map(p => p.target);
+          const realizationData = this.projects.map(p => p.realization);
+
+          this.chart.data.labels = labels;
+          this.chart.data.datasets[0].data = targetData;
+          this.chart.data.datasets[1].data = realizationData;
+          this.chart.update();
+        }
+      },
+      mounted() {
+        const ctx = document.getElementById('chart').getContext('2d');
+        this.chart = new Chart(ctx, {
+          type: 'bar',
+          data: {
+            labels: [],
+            datasets: [
+              {
+                label: 'Target %',
+                backgroundColor: '#3b82f6',
+                data: []
+              },
+              {
+                label: 'Realisasi %',
+                backgroundColor: '#10b981',
+                data: []
+              }
+            ]
+          },
+          options: {
+            responsive: true,
+            scales: {
+              y: {
+                beginAtZero: true,
+                max: 100
+              }
+            }
+          }
+        });
+      }
+    });
+    app.mount('#app');
+  </script>
+</body>
+</html>
